@@ -3,14 +3,19 @@ const { Contact } = require("../models/contact");
 const { HttpError, controlWrapper } = require("../helpers");
 
 const listContacts = async (req, res) => {
-  // const result = await Contact.find({});
-  const result = await Contact.find({}, "-createdAt -updatedAt");
+  const { _id: owner } = req.user;
+
+  const { page = 1, limit = 5 } = req.query;
+  const skip = (page - 1) * limit;
+  const result = await Contact.find({ owner }, "-createdAt -updatedAt", {
+    skip,
+    limit: 5,
+  });
   res.json(result);
 };
 
 const getContactById = async (req, res) => {
   const { id } = req.params;
-  // const result = await Contact.findOne({ _id: id });
   const result = await Contact.findById(id);
   if (!result) {
     throw HttpError(404, "Not found");
@@ -19,7 +24,8 @@ const getContactById = async (req, res) => {
 };
 
 const addContact = async (req, res) => {
-  const result = await Contact.create(req.body);
+  const { _id: owner } = req.user;
+  const result = await Contact.create({ ...req.body, owner });
   res.status(201).json(result);
 };
 
